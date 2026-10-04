@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pembelajaran Mad Iwad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Islamic Pattern Background */
+        body {
+            background-color: #0f172a;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231e293b' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e2e8f0;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .arabic-text {
+            font-family: 'Amiri', 'Traditional Arabic', serif;
+            font-size: 2.5rem;
+            line-height: 2;
+            direction: rtl;
+        }
+
+        .btn-islamic {
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-islamic:hover {
+            background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+        }
+        
+        .btn-option {
+            background: #1e293b;
+            border: 2px solid #334155;
+            transition: all 0.2s;
+        }
+        .btn-option:hover {
+            border-color: #0d9488;
+            background: #334155;
+        }
+        .btn-option.correct {
+            background: #065f46;
+            border-color: #10b981;
+        }
+        .btn-option.wrong {
+            background: #7f1d1d;
+            border-color: #ef4444;
+        }
+
+        /* Animation for feedback */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .animate-pulse-fast {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        /* Styles for Drag and Drop */
+        .draggable-card {
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .draggable-card:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+        .drop-zone {
+            border: 3px dashed #475569;
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            border-color: #14b8a6;
+            background-color: rgba(20, 184, 166, 0.1);
+            transform: scale(1.02);
+        }
+        
+        /* Camera UI */
+        .camera-view {
+            transform: scaleX(-1); /* Mirror effect */
+        }
+    </style>
+    <!-- MediaPipe for Hand Tracking -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4">
+
+    <!-- Header -->
+    <header class="text-center mb-10 w-full max-w-4xl glass-panel rounded-2xl p-6">
+        <h1 class="text-4xl md:text-5xl font-bold text-teal-400 mb-2 flex items-center justify-center gap-3">
+            <i class="fas fa-book-quran"></i> Mari Belajar Mad Iwad
+        </h1>
+        <p class="text-slate-300 text-lg">Platform interaktif untuk mengenali dan mempraktikkan hukum tajwid Mad Iwad.</p>
+        
+        <div class="flex justify-center gap-4 mt-6">
+            <button id="btn-learn" class="btn-islamic px-6 py-3 rounded-full font-semibold flex items-center gap-2">
+                <i class="fas fa-graduation-cap"></i> Nota Pembelajaran
+            </button>
+            <button id="btn-game" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-full font-semibold border border-slate-500 transition-colors flex items-center gap-2">
+                <i class="fas fa-gamepad"></i> Main Permainan
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="w-full max-w-4xl relative">
+        
+        <!-- Section: Learning -->
+        <section id="section-learn" class="glass-panel rounded-2xl p-8 mb-8 transition-all duration-500">
+            <h2 class="text-3xl font-bold text-teal-300 mb-6 border-b border-slate-600 pb-2">Apa itu Mad Iwad?</h2>
+            
+            <div class="space-y-6 text-lg text-slate-200">
+                <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                    <h3 class="text-xl font-semibold text-yellow-400 mb-2"><i class="fas fa-info-circle mr-2"></i>Pengertian</h3>
+                    <p><strong>Mad</strong> bererti panjang, manakala <strong>Iwad</strong> bererti ganti.</p>
+                    <p class="mt-2">Mad Iwad berlaku apabila kita waqaf (berhenti) pada huruf yang berbaris dua di atas (Fathatain - ً ) di akhir kalimah, <strong>kecuali</strong> pada huruf Ta' Marbutoh (ة).</p>
+                </div>
+
+                <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                    <h3 class="text-xl font-semibold text-yellow-400 mb-2"><i class="fas fa-font mr-2"></i>Huruf Mad Iwad</h3>
+                    <p>Huruf yang terlibat dalam Mad Iwad adalah huruf <strong>Alif (ا)</strong> atau <strong>Alif Maqsurah (ى)</strong> yang berada di hujung kalimah selepas huruf yang berbaris dua di atas (Fathatain).</p>
+                    <p class="mt-2 text-slate-400 text-sm">Nota: Kadangkala Alif ini tidak ditulis dalam Rasm Uthmani (seperti perkataan مَاءً), tetapi ia tetap dibaca dengan panjang 2 harakat apabila waqaf (مَاءَا).</p>
+                </div>
+
+                <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                    <h3 class="text-xl font-semibold text-yellow-400 mb-2"><i class="fas fa-ruler mr-2"></i>Kadar Bacaan</h3>
+                    <p>Apabila waqaf, baris dua di atas (Tanwin) itu ditukarkan menjadi baris satu di atas (Fathah) dan dibaca panjang dengan kadar <strong>2 harakat</strong>.</p>
+                </div>
+
+                <div class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                    <h3 class="text-xl font-semibold text-yellow-400 mb-4"><i class="fas fa-book-open mr-2"></i>Contoh-contoh (Perbandingan)</h3>
+                    
+                    <div class="space-y-6">
+                        <!-- Contoh 1: Huruf biasa -->
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 relative">
+                            <h4 class="text-emerald-400 font-medium mb-4 text-center">Contoh 1: Pada huruf biasa (seperti Mim)</h4>
+                            <div class="flex flex-col md:flex-row items-stretch justify-between gap-4">
+                                <!-- Asal -->
+                                <div class="flex-1 flex flex-col justify-center text-center bg-slate-800 p-4 rounded-lg border border-slate-600">
+                                    <span class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">Bacaan Disambung / Asal</span>
+                                    <p class="arabic-text text-white">حَكِيم<span class="text-yellow-400 font-bold">اً</span></p>
+                                    <p class="text-sm text-slate-300 mt-2">Dibaca: <span class="italic">Hakiiman</span></p>
+                                    <p class="text-xs text-yellow-300/80 mt-1">Berbaris dua (bunyi 'N')</p>
+                                </div>
+                                
+                                <!-- Arrow -->
+                                <div class="flex items-center justify-center text-slate-500 py-2">
+                                    <i class="fas fa-arrow-right text-2xl hidden md:block"></i>
+                                    <i class="fas fa-arrow-down text-2xl md:hidden"></i>
+                                </div>
+                                
+                                <!-- Mad Iwad -->
+                                <div class="flex-1 flex flex-col justify-center text-center bg-teal-900/40 p-4 rounded-lg border border-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.15)] relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 bg-teal-500 text-xs px-3 py-1 rounded-bl-lg text-white font-bold shadow-md">Waqaf</div>
+                                    <span class="text-xs text-teal-400 uppercase font-bold tracking-wider mb-2 block mt-2">Bila Berhenti (Mad Iwad)</span>
+                                    <p class="arabic-text text-teal-50">حَكِيم<span class="text-red-500 font-bold">َا</span></p>
+                                    <p class="text-sm text-teal-200 mt-2">Dibaca: <span class="italic font-bold">Hakiimaa</span> (2 Harakat)</p>
+                                    <p class="text-xs text-red-300 mt-1">Diganti baris satu & Alif merah</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contoh 2: Huruf Hamzah -->
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 relative">
+                            <h4 class="text-emerald-400 font-medium mb-4 text-center">Contoh 2: Pada huruf Hamzah (Alif tidak ditulis)</h4>
+                            <div class="flex flex-col md:flex-row items-stretch justify-between gap-4">
+                                <!-- Asal -->
+                                <div class="flex-1 flex flex-col justify-center text-center bg-slate-800 p-4 rounded-lg border border-slate-600">
+                                    <span class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">Bacaan Disambung / Asal</span>
+                                    <p class="arabic-text text-white">مَاء<span class="text-yellow-400 font-bold">ً</span></p>
+                                    <p class="text-sm text-slate-300 mt-2">Dibaca: <span class="italic">Maa-an</span></p>
+                                </div>
+                                
+                                <!-- Arrow -->
+                                <div class="flex items-center justify-center text-slate-500 py-2">
+                                    <i class="fas fa-arrow-right text-2xl hidden md:block"></i>
+                                    <i class="fas fa-arrow-down text-2xl md:hidden"></i>
+                                </div>
+                                
+                                <!-- Mad Iwad -->
+                                <div class="flex-1 flex flex-col justify-center text-center bg-teal-900/40 p-4 rounded-lg border border-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.15)] relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 bg-teal-500 text-xs px-3 py-1 rounded-bl-lg text-white font-bold shadow-md">Waqaf</div>
+                                    <span class="text-xs text-teal-400 uppercase font-bold tracking-wider mb-2 block mt-2">Bila Berhenti (Mad Iwad)</span>
+                                    <p class="arabic-text text-teal-50">مَاء<span class="text-red-500 font-bold">َا</span></p>
+                                    <p class="text-sm text-teal-200 mt-2">Dibaca: <span class="italic font-bold">Maa-aa</span> (2 Harakat)</p>
+                                    <p class="text-xs text-red-300 mt-1">Alif merah 'wujud' dlm bacaan</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contoh 3: Pengecualian -->
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 relative">
+                            <h4 class="text-rose-400 font-medium mb-4 text-center">Contoh 3: Pengecualian pada Ta' Marbutoh (ة)</h4>
+                            <div class="flex flex-col md:flex-row items-stretch justify-between gap-4">
+                                <!-- Asal -->
+                                <div class="flex-1 flex flex-col justify-center text-center bg-slate-800 p-4 rounded-lg border border-slate-600">
+                                    <span class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2 block">Bacaan Disambung / Asal</span>
+                                    <p class="arabic-text text-white">شَجَرَة<span class="text-yellow-400 font-bold">ً</span></p>
+                                    <p class="text-sm text-slate-300 mt-2">Dibaca: <span class="italic">Shajaratan</span></p>
+                                </div>
+                                
+                                <!-- Arrow -->
+                                <div class="flex items-center justify-center text-slate-500 py-2">
+                                    <i class="fas fa-arrow-right text-2xl hidden md:block"></i>
+                                    <i class="fas fa-arrow-down text-2xl md:hidden"></i>
+                                </div>
+                                
+                                <!-- Bukan Mad Iwad -->
+                                <div class="flex-1 flex flex-col justify-center text-center bg-rose-900/20 p-4 rounded-lg border border-rose-500/50 relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 bg-rose-600 text-xs px-3 py-1 rounded-bl-lg text-white font-bold shadow-md">Waqaf</div>
+                                    <span class="text-xs text-rose-300 uppercase font-bold tracking-wider mb-2 block mt-2">Bukan Mad Iwad</span>
+                                    <p class="arabic-text text-white">شَجَرَ<span class="text-rose-400 font-bold">هْ</span></p>
+                                    <p class="text-sm text-rose-200 mt-2">Dibaca: <span class="italic font-bold">Shajarah</span> (Tiada Mad)</p>
+                                    <p class="text-xs text-rose-300 mt-1">Ditukar menjadi Ha' Sukun (Mati)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Game -->
+        <section id="section-game" class="glass-panel rounded-2xl p-8 mb-8 hidden transition-all duration-500 w-full">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-600 pb-4">
+                <h2 class="text-2xl md:text-3xl font-bold text-teal-300"><i class="fas fa-gamepad text-xl mr-2"></i>Uji Pendengaran & Gestur</h2>
+                <div class="bg-slate-800 px-4 py-2 rounded-full border border-slate-600">
+                    <span class="text-slate-300">Skor: <span id="score-display" class="text-yellow-400 font-bold text-xl">0</span></span>
+                </div>
+            </div>
+
+            <!-- Game Setup/Start Screen -->
+            <div id="game-start-screen" class="text-center py-10">
+                <i class="fas fa-hand-paper text-6xl text-teal-500 mb-6 animate-pulse"></i>
+                <h3 class="text-2xl font-semibold mb-4 text-white">Sedia untuk Bermain?</h3>
+                <p class="text-slate-300 mb-4 max-w-lg mx-auto">Dengar bacaan audio. Kemudian, anda boleh menjawab dengan dua cara:</p>
+                <ul class="text-left text-slate-300 max-w-md mx-auto mb-8 bg-slate-800/50 p-4 rounded-xl">
+                    <li class="mb-2"><i class="fas fa-hand-pointer text-teal-400 mr-2"></i> <strong>Cara 1:</strong> Tarik dan Lepas (Drag & Drop) kotak ayat ke ruangan jawapan.</li>
+                    <li><i class="fas fa-camera text-teal-400 mr-2"></i> <strong>Cara 2 (Kamera):</strong> Tunjukkan <strong>1 jari</strong> untuk "Ada Mad Iwad" atau <strong>2 jari</strong> untuk "Tiada Mad Iwad".</li>
+                </ul>
+                <button id="btn-start-game" class="btn-islamic text-xl px-10 py-4 rounded-full font-bold shadow-lg w-full md:w-auto">
+                    Mula Permainan <i class="fas fa-play ml-2"></i>
+                </button>
+            </div>
+
+            <!-- Game Active Screen -->
+            <div id="game-active-screen" class="hidden flex-col items-center w-full">
+                <!-- Camera Toggle & Info -->
+                <div class="w-full flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <div class="text-sm text-slate-400 bg-slate-800 px-4 py-2 rounded-lg">
+                        Soalan <span id="current-question-num" class="text-white font-bold text-lg">1</span> / <span id="total-questions">5</span>
+                    </div>
+                    <button id="btn-toggle-camera" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full flex items-center gap-2 transition-colors text-sm font-semibold">
+                        <i class="fas fa-video"></i> Buka Kamera (Gestur)
+                    </button>
+                </div>
+
+                <div class="flex flex-col lg:flex-row w-full gap-8 relative">
+                    
+                    <!-- Left Drop Zone (YES) -->
+                    <div id="drop-yes" class="drop-zone flex-1 bg-slate-800/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center order-2 lg:order-1" data-answer="yes">
+                        <div class="w-16 h-16 rounded-full bg-emerald-900/50 flex items-center justify-center mb-4 border border-emerald-500">
+                            <i class="fas fa-check text-2xl text-emerald-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-emerald-300 mb-2">Ada Mad Iwad</h3>
+                        <p class="text-slate-400 text-sm mb-2">Tarik ayat ke sini atau klik</p>
+                        <div class="bg-slate-900 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-800 flex items-center gap-2">
+                            <i class="fas fa-hand-rock"></i> Gestur: Penumbuk
+                        </div>
+                    </div>
+
+                    <!-- Center Area (Draggable Verse & Audio) -->
+                    <div class="flex-1 flex flex-col items-center justify-center z-10 order-1 lg:order-2">
+                        <!-- Audio Player (Moved to Top) -->
+                        <audio id="quran-audio" class="hidden"></audio>
+                        <button id="btn-play-audio" class="w-20 h-20 bg-teal-600 hover:bg-teal-500 rounded-full flex items-center justify-center text-3xl text-white shadow-[0_0_15px_rgba(13,148,136,0.4)] transition-transform transform hover:scale-105 mb-2 relative z-20">
+                            <i class="fas fa-play ml-1" id="play-icon"></i>
+                        </button>
+                        <p class="text-teal-200 text-sm font-medium mb-6">Dengar Audio</p>
+
+                        <!-- Draggable Element -->
+                        <div id="drag-verse" draggable="true" class="draggable-card bg-teal-900/40 w-full p-6 rounded-2xl border border-teal-500 shadow-[0_0_25px_rgba(20,184,166,0.2)] flex flex-col items-center relative z-20">
+                            <div class="absolute -top-3 bg-teal-600 text-white text-xs px-3 py-1 rounded-full"><i class="fas fa-arrows-alt mr-1"></i> Boleh ditarik</div>
+                            <p id="game-verse-text" class="arabic-text text-white text-center mt-2"></p>
+                        </div>
+                    </div>
+
+                    <!-- Right Drop Zone (NO) -->
+                    <div id="drop-no" class="drop-zone flex-1 bg-slate-800/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center order-3" data-answer="no">
+                        <div class="w-16 h-16 rounded-full bg-rose-900/50 flex items-center justify-center mb-4 border border-rose-500">
+                            <i class="fas fa-times text-2xl text-rose-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-rose-300 mb-2">Tiada Mad Iwad</h3>
+                        <p class="text-slate-400 text-sm mb-2">Tarik ayat ke sini atau klik</p>
+                        <div class="bg-slate-900 text-rose-400 px-3 py-1 rounded-full text-xs font-bold border border-rose-800 flex items-center gap-2">
+                            <i class="fas fa-hand-paper"></i> Gestur: Buka Tangan
+                        </div>
+                    </div>
+
+                    <!-- Feedback Overlay (Kemas kini Pop-up Modal) -->
+                    <div id="feedback-overlay" class="fixed inset-0 bg-slate-950/90 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 hidden z-[100] backdrop-blur-md px-4">
+                        <div id="feedback-card" class="bg-slate-800 border-4 rounded-3xl p-6 md:p-10 max-w-lg w-full flex flex-col items-center shadow-2xl relative transform transition-transform scale-95">
+                            
+                            <!-- Karakter Islamik (Kanan: Betul) -->
+                            <div id="char-correct" class="hidden">
+                                <svg viewBox="0 0 100 100" class="w-32 h-32 mx-auto mb-4 drop-shadow-lg">
+                                    <circle cx="50" cy="60" r="25" fill="#fcd34d" />
+                                    <!-- Kopiah -->
+                                    <path d="M 25 50 C 25 25, 75 25, 75 50 Z" fill="#ffffff" />
+                                    <path d="M 25 50 L 75 50" stroke="#cbd5e1" stroke-width="2" />
+                                    <!-- Mata Gembira -->
+                                    <path d="M 35 55 Q 40 52 45 55" fill="none" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M 55 55 Q 60 52 65 55" fill="none" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+                                    <!-- Mulut Senyum -->
+                                    <path d="M 40 65 Q 50 75 60 65" fill="none" stroke="#1e293b" stroke-width="3" stroke-linecap="round" />
+                                </svg>
+                            </div>
+
+                            <!-- Karakter Islamik (Kiri: Salah) -->
+                            <div id="char-wrong" class="hidden">
+                                <svg viewBox="0 0 100 100" class="w-32 h-32 mx-auto mb-4 drop-shadow-lg">
+                                    <circle cx="50" cy="60" r="25" fill="#fcd34d" />
+                                    <!-- Kopiah -->
+                                    <path d="M 25 50 C 25 25, 75 25, 75 50 Z" fill="#ffffff" />
+                                    <path d="M 25 50 L 75 50" stroke="#cbd5e1" stroke-width="2" />
+                                    <!-- Mata Biasa -->
+                                    <circle cx="40" cy="58" r="2.5" fill="#1e293b" />
+                                    <circle cx="60" cy="58" r="2.5" fill="#1e293b" />
+                                    <!-- Kening Berkerut (Memberi Galakan) -->
+                                    <path d="M 35 52 Q 40 50 45 54" fill="none" stroke="#1e293b" stroke-width="2" />
+                                    <path d="M 65 52 Q 60 50 55 54" fill="none" stroke="#1e293b" stroke-width="2" />
+                                    <!-- Mulut Sedikit Terbuka -->
+                                    <path d="M 47 68 Q 50 70 53 68" fill="none" stroke="#1e293b" stroke-width="3" stroke-linecap="round" />
+                                </svg>
+                            </div>
+
+                            <h3 id="feedback-title" class="text-3xl font-bold mb-2"></h3>
+                            <p id="feedback-text" class="text-center text-lg text-slate-300 mb-6"></p>
+                            <div class="w-full bg-slate-900 rounded-xl p-4 border border-slate-700 shadow-inner">
+                                <p id="feedback-arabic" class="arabic-text text-2xl text-teal-300 text-center"></p>
+                            </div>
+                            <button id="btn-next-question" class="mt-8 bg-slate-700 hover:bg-slate-600 w-16 h-16 flex items-center justify-center rounded-full text-2xl transition-all duration-200 border-2 border-slate-500 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:scale-110 text-white">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Camera View -->
+            <div id="camera-container" class="fixed bottom-4 right-4 w-48 h-36 bg-black border-2 border-indigo-500 rounded-xl overflow-hidden z-40 hidden shadow-2xl">
+                <video id="webcam_video" class="hidden" autoplay playsinline></video>
+                <canvas id="output_canvas" class="w-full h-full object-cover camera-view"></canvas>
+                <!-- Gesture Loading/Detection Indicator -->
+                <div id="gesture-indicator" class="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded text-xs text-white flex items-center gap-2 hidden">
+                    <i class="fas fa-circle-notch fa-spin text-teal-400"></i> <span id="gesture-text">Mengesan...</span>
+                </div>
+            </div>
+
+            <!-- Game Over Screen -->
+            <div id="game-over-screen" class="hidden text-center py-10">
+                <div class="inline-block p-6 rounded-full bg-slate-800 border-4 border-teal-500 mb-6">
+                    <i class="fas fa-trophy text-6xl text-yellow-400"></i>
+                </div>
+                <h3 class="text-3xl font-bold mb-2 text-white">Tahniah!</h3>
+                <p class="text-xl text-slate-300 mb-6">Permainan Tamat. Skor akhir anda:</p>
+                <div class="text-5xl font-bold text-teal-400 mb-8">
+                    <span id="final-score">0</span> / <span id="final-total">5</span>
+                </div>
+                <div class="flex flex-col md:flex-row justify-center gap-4">
+                    <button id="btn-restart" class="btn-islamic text-lg px-8 py-3 rounded-full font-bold shadow-lg">
+                        <i class="fas fa-redo mr-2"></i> Main Semula
+                    </button>
+                    <button id="btn-back-nota" class="bg-slate-700 text-white text-lg px-8 py-3 rounded-full font-bold border border-slate-500 shadow-lg">
+                        <i class="fas fa-book-open mr-2"></i> Kembali ke Nota
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Audio untuk Maklum Balas Suara AI -->
+    <audio id="audio-correct" src="https://translate.google.com/translate_tts?ie=UTF-8&q=Jawapan+anda+betul&tl=ms&client=tw-ob"></audio>
+    <audio id="audio-wrong" src="https://translate.google.com/translate_tts?ie=UTF-8&q=Sila+cuba+lagi&tl=ms&client=tw-ob"></audio>
+
+    <!-- Scripts -->
+    <script>
+        // Menggunakan audio bacaan sebenar (MP3) untuk tajwid yang tepat
+        const quranAudio = document.getElementById('quran-audio');
+
+        // Data for the game (Dikemas kini dengan link audio MP3 sebenar)
+        const gameData = [
+            {
+                text: "فَسَبِّحْ بِحَمْدِ رَبِّكَ وَٱسْتَغْفِرْهُ ۚ إِنَّهُۥ كَانَ تَوَّابًا",
+                waqaf_text: "فَسَبِّحْ بِحَمْدِ رَبِّكَ وَٱسْتَغْفِرْهُ ۚ إِنَّهُۥ كَانَ تَوَّابَا",
+                highlighted_waqaf: "فَسَبِّحْ بِحَمْدِ رَبِّكَ وَٱسْتَغْفِرْهُ ۚ إِنَّهُۥ كَانَ تَوَّابَ<span class='text-red-500'>ا</span>",
+                phonetic: "Fasabbih bihamdi rabbika wastaghfirh, innahu kaana tawwaabaa",
+                hasMadIwad: true,
+                explanation: "Berhenti pada perkataan 'tawwaabaa'. Fathatain ditukar menjadi Fathah dan dibaca 2 harakat.",
+                audioSrc: "https://everyayah.com/data/Alafasy_128kbps/110003.mp3"
+            },
+            {
+                text: "فِى جَنَّةٍ عَالِيَةٍ",
+                waqaf_text: "فِى جَنَّةٍ عَالِيَهْ",
+                highlighted_waqaf: "فِى جَنَّةٍ عَالِيَهْ",
+                phonetic: "Fi jannatin 'aaliyah",
+                hasMadIwad: false,
+                explanation: "Berhenti pada Ta' Marbutoh (ة) ditukar menjadi Ha' (ه) mati. Bukan Mad Iwad.",
+                audioSrc: "https://everyayah.com/data/Alafasy_128kbps/088010.mp3"
+            },
+            {
+                text: "إِنَّا فَتَحْنَا لَكَ فَتْحًا مُّبِينًا",
+                waqaf_text: "إِنَّا فَتَحْنَا لَكَ فَتْحًا مُّبِينَا",
+                highlighted_waqaf: "إِنَّا فَتَحْنَا لَكَ فَتْحًا مُّبِينَ<span class='text-red-500'>ا</span>",
+                phonetic: "Inna fatahna laka fathan mubiinaa",
+                hasMadIwad: true,
+                explanation: "Berhenti pada perkataan 'mubiinaa'. Baris dua di atas ditukar kepada satu dan dibaca 2 harakat.",
+                audioSrc: "https://everyayah.com/data/Alafasy_128kbps/048001.mp3"
+            },
+            {
+                text: "قُلْ هُوَ ٱللَّهُ أَحَدٌ",
+                waqaf_text: "قُلْ هُوَ ٱللَّهُ أَحَدْ",
+                highlighted_waqaf: "قُلْ هُوَ ٱللَّهُ أَحَدْ",
+                phonetic: "Qul huwallahu ahad",
+                hasMadIwad: false,
+                explanation: "Berhenti pada perkataan 'ahad'. Ia adalah hukum Qalqalah, bukan Mad Iwad.",
+                audioSrc: "https://everyayah.com/data/Alafasy_128kbps/112001.mp3"
+            },
+            {
+                text: "وَٱلْعَٰدِيَٰتِ ضَبْحًا",
+                waqaf_text: "وَٱلْعَٰدِيَٰتِ ضَبْحَا",
+                highlighted_waqaf: "وَٱلْعَٰدِيَٰتِ ضَبْحَ<span class='text-red-500'>ا</span>",
+                phonetic: "Wal 'aadiyaati dab-haa",
+                hasMadIwad: true,
+                explanation: "Berhenti pada perkataan 'dab-haa'. Huruf Ha berbaris dua di atas dibaca sebagai satu baris dengan 2 harakat.",
+                audioSrc: "https://everyayah.com/data/Alafasy_128kbps/100001.mp3"
+            }
+        ];
+
+        // State variables
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isPlayingAudio = false;
+        let shuffledData = [];
+        let isAnswerChecking = false;
+
+        // Camera & MediaPipe variables
+        let cameraEnabled = false;
+        let camera = null;
+        let handsModel = null;
+        let gestureHoldFrames = 0;
+        let detectedGesture = 0; // 0: none, 1: one finger, 2: two fingers
+        const REQUIRED_HOLD_FRAMES = 15; // Berapa frame tangan perlu ditahan sebelum submit
+
+        // DOM Elements
+        const btnLearn = document.getElementById('btn-learn');
+        const btnGame = document.getElementById('btn-game');
+        const sectionLearn = document.getElementById('section-learn');
+        const sectionGame = document.getElementById('section-game');
+        
+        const gameStartScreen = document.getElementById('game-start-screen');
+        const gameActiveScreen = document.getElementById('game-active-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        
+        const btnStartGame = document.getElementById('btn-start-game');
+        const btnPlayAudio = document.getElementById('btn-play-audio');
+        const playIcon = document.getElementById('play-icon');
+        const answerBtns = document.querySelectorAll('.answer-btn');
+        const btnNextQuestion = document.getElementById('btn-next-question');
+        const btnRestart = document.getElementById('btn-restart');
+        
+        const scoreDisplay = document.getElementById('score-display');
+        const currentQuestionNum = document.getElementById('current-question-num');
+        const totalQuestions = document.getElementById('total-questions');
+        const finalScore = document.getElementById('final-score');
+        const finalTotal = document.getElementById('final-total');
+        
+        // Drag and drop & Camera elements
+        const dragVerse = document.getElementById('drag-verse');
+        const gameVerseText = document.getElementById('game-verse-text');
+        const dropZones = document.querySelectorAll('.drop-zone');
+        const btnToggleCamera = document.getElementById('btn-toggle-camera');
+        const cameraContainer = document.getElementById('camera-container');
+        const videoElement = document.getElementById('webcam_video');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const gestureIndicator = document.getElementById('gesture-indicator');
+        const gestureText = document.getElementById('gesture-text');
+        const btnBackNota = document.getElementById('btn-back-nota');
+        
+        const feedbackOverlay = document.getElementById('feedback-overlay');
+        const feedbackCard = document.getElementById('feedback-card');
+        const charCorrect = document.getElementById('char-correct');
+        const charWrong = document.getElementById('char-wrong');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+        const feedbackArabic = document.getElementById('feedback-arabic');
+
+        const audioCorrect = document.getElementById('audio-correct');
+        const audioWrong = document.getElementById('audio-wrong');
+
+        // Initialize
+        function init() {
+            totalQuestions.textContent = gameData.length;
+            finalTotal.textContent = gameData.length;
+            
+            setupDragAndDrop();
+
+            // Setup audio events
+            quranAudio.addEventListener('ended', () => {
+                isPlayingAudio = false;
+                resetPlayButton();
+            });
+
+            quranAudio.addEventListener('error', (e) => {
+                console.error("Audio playback error", e);
+                isPlayingAudio = false;
+                resetPlayButton();
+                alert("Gagal memuatkan audio. Sila pastikan peranti anda mempunyai capaian internet untuk mendengar audio ini.");
+            });
+        }
+
+        // Navigation
+        btnLearn.addEventListener('click', () => {
+            sectionLearn.classList.remove('hidden');
+            sectionGame.classList.add('hidden');
+            btnLearn.className = 'btn-islamic px-6 py-3 rounded-full font-semibold flex items-center gap-2';
+            btnGame.className = 'bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-full font-semibold border border-slate-500 transition-colors flex items-center gap-2';
+            stopAudio();
+            if(cameraEnabled) toggleCamera(); // Tutup kamera bila masuk ke nota
+        });
+
+        btnGame.addEventListener('click', () => {
+            sectionLearn.classList.add('hidden');
+            sectionGame.classList.remove('hidden');
+            btnGame.className = 'btn-islamic px-6 py-3 rounded-full font-semibold flex items-center gap-2';
+            btnLearn.className = 'bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-full font-semibold border border-slate-500 transition-colors flex items-center gap-2';
+        });
+
+        // Game Logic
+        btnStartGame.addEventListener('click', startGame);
+        btnRestart.addEventListener('click', startGame);
+        btnBackNota.addEventListener('click', () => { btnLearn.click(); });
+
+        function startGame() {
+            score = 0;
+            currentQuestionIndex = 0;
+            updateScore();
+            isAnswerChecking = false;
+            
+            // Shuffle questions
+            shuffledData = [...gameData].sort(() => Math.random() - 0.5);
+            
+            gameStartScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            gameActiveScreen.classList.remove('hidden');
+            gameActiveScreen.classList.add('flex');
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const currentQ = shuffledData[currentQuestionIndex];
+            currentQuestionNum.textContent = currentQuestionIndex + 1;
+            gameVerseText.textContent = currentQ.text;
+            isAnswerChecking = false;
+            
+            // Reset Drag styling
+            dragVerse.style.opacity = '1';
+            dragVerse.style.transform = 'translate(0, 0)';
+            dragVerse.setAttribute('draggable', 'true');
+            
+            hideFeedback();
+            
+            hideFeedback();
+            resetButtons();
+            
+            // Set audio source awal-awal
+            quranAudio.src = currentQ.audioSrc;
+            
+            // Auto play audio slightly after loading
+            setTimeout(() => {
+                playQuranAudio();
+            }, 800);
+        }
+
+        function playQuranAudio() {
+            const currentQ = shuffledData[currentQuestionIndex];
+            
+            // Pastikan URL yang betul
+            if (quranAudio.src !== currentQ.audioSrc) {
+                quranAudio.src = currentQ.audioSrc;
+            }
+
+            quranAudio.play().then(() => {
+                isPlayingAudio = true;
+                btnPlayAudio.classList.remove('bg-teal-600');
+                btnPlayAudio.classList.add('bg-amber-500');
+                btnPlayAudio.classList.add('animate-pulse-fast');
+                playIcon.className = 'fas fa-stop';
+            }).catch(e => {
+                console.error("Audio play failed:", e);
+            });
+        }
+
+        function stopAudio() {
+            quranAudio.pause();
+            quranAudio.currentTime = 0;
+            isPlayingAudio = false;
+            resetPlayButton();
+        }
+
+        function resetPlayButton() {
+            btnPlayAudio.classList.add('bg-teal-600');
+            btnPlayAudio.classList.remove('bg-amber-500');
+            btnPlayAudio.classList.remove('animate-pulse-fast');
+            playIcon.className = 'fas fa-play ml-1';
+        }
+
+        btnPlayAudio.addEventListener('click', () => {
+            if (isPlayingAudio) {
+                stopAudio();
+            } else {
+                playQuranAudio();
+            }
+        });
+
+        function setupDragAndDrop() {
+            // Mobile Touch Events (Since native drag n drop is tricky on mobile)
+            dragVerse.addEventListener('touchstart', handleTouchStart, {passive: false});
+            dragVerse.addEventListener('touchmove', handleTouchMove, {passive: false});
+            dragVerse.addEventListener('touchend', handleTouchEnd);
+
+            // Desktop Drag Events
+            dragVerse.addEventListener('dragstart', (e) => {
+                if(isAnswerChecking) return e.preventDefault();
+                dragVerse.classList.add('opacity-50');
+                e.dataTransfer.setData('text/plain', 'verse');
+            });
+            
+            dragVerse.addEventListener('dragend', () => {
+                dragVerse.classList.remove('opacity-50');
+            });
+
+            dropZones.forEach(zone => {
+                // membenarkan drop
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if(!isAnswerChecking) zone.classList.add('drag-over');
+                });
+                
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-over');
+                });
+                
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over');
+                    if(isAnswerChecking) return;
+                    
+                    const answer = zone.dataset.answer === 'yes';
+                    triggerAnswer(answer, zone);
+                });
+
+                // Sebagai alternatif, klik sahaja pada drop zone pun boleh
+                zone.addEventListener('click', () => {
+                    if(isAnswerChecking) return;
+                    const answer = zone.dataset.answer === 'yes';
+                    triggerAnswer(answer, zone);
+                });
+            });
+        }
+
+        // --- Touch Support for Mobile (Simulate Drag) ---
+        let initialX, initialY, currentX, currentY;
+        function handleTouchStart(e) {
+            if(isAnswerChecking) return;
+            initialX = e.touches[0].clientX - dragVerse.offsetLeft;
+            initialY = e.touches[0].clientY - dragVerse.offsetTop;
+            dragVerse.style.transition = 'none'; // Buang transition supaya ikut jari
+        }
+
+        function handleTouchMove(e) {
+            if(isAnswerChecking) return;
+            e.preventDefault(); // Prevent scrolling
+            currentX = e.touches[0].clientX - initialX;
+            currentY = e.touches[0].clientY - initialY;
+            dragVerse.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            
+            // Highlight zon di bawah jari
+            const touch = e.touches[0];
+            dropZones.forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                   touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                    zone.classList.add('drag-over');
+                } else {
+                    zone.classList.remove('drag-over');
+                }
+            });
+        }
+
+        function handleTouchEnd(e) {
+            if(isAnswerChecking) return;
+            dragVerse.style.transition = 'transform 0.3s ease';
+            dragVerse.style.transform = 'translate(0, 0)'; // Kembalikan ke asal
+            
+            const changedTouch = e.changedTouches[0];
+            dropZones.forEach(zone => {
+                zone.classList.remove('drag-over');
+                const rect = zone.getBoundingClientRect();
+                if(changedTouch.clientX >= rect.left && changedTouch.clientX <= rect.right &&
+                   changedTouch.clientY >= rect.top && changedTouch.clientY <= rect.bottom) {
+                    const answer = zone.dataset.answer === 'yes';
+                    triggerAnswer(answer, zone);
+                }
+            });
+        }
+
+        function triggerAnswer(selectedAnswer, targetZone) {
+            if (isAnswerChecking) return;
+            isAnswerChecking = true;
+            stopAudio();
+            dragVerse.setAttribute('draggable', 'false'); // Kunci drag
+            
+            // Visual feedback ringkas
+            targetZone.classList.add('bg-slate-700');
+            setTimeout(() => {
+                targetZone.classList.remove('bg-slate-700');
+                checkAnswer(selectedAnswer);
+            }, 300);
+        }
+
+        function checkAnswer(selectedAnswer) {
+            const currentQ = shuffledData[currentQuestionIndex];
+            const isCorrect = selectedAnswer === currentQ.hasMadIwad;
+            
+            if (isCorrect) {
+                score++;
+                updateScore();
+                showFeedback(true, currentQ);
+            } else {
+                showFeedback(false, currentQ);
+            }
+        }
+
+        function showFeedback(isCorrect, questionData) {
+            feedbackOverlay.classList.remove('hidden');
+            feedbackOverlay.classList.remove('pointer-events-none');
+            // Slight delay for animation
+            setTimeout(() => {
+                feedbackOverlay.classList.remove('opacity-0');
+                feedbackCard.classList.remove('scale-95');
+                feedbackCard.classList.add('scale-100');
+            }, 10);
+            
+            if (isCorrect) {
+                feedbackCard.className = 'bg-slate-800 border-4 border-emerald-500 rounded-3xl p-6 md:p-10 max-w-lg w-full flex flex-col items-center shadow-[0_0_40px_rgba(16,185,129,0.2)] relative transform transition-transform duration-300 scale-95';
+                charCorrect.classList.remove('hidden');
+                charWrong.classList.add('hidden');
+                
+                feedbackTitle.textContent = 'Jawapan Anda Betul!';
+                feedbackTitle.className = 'text-2xl md:text-3xl font-bold mb-3 text-emerald-400';
+                
+                // Mainkan suara "Jawapan anda betul"
+                audioCorrect.currentTime = 0;
+                audioCorrect.play().catch(e => console.log("Terhalang oleh pelayar:", e));
+            } else {
+                feedbackCard.className = 'bg-slate-800 border-4 border-rose-500 rounded-3xl p-6 md:p-10 max-w-lg w-full flex flex-col items-center shadow-[0_0_40px_rgba(244,63,94,0.2)] relative transform transition-transform duration-300 scale-95';
+                charWrong.classList.remove('hidden');
+                charCorrect.classList.add('hidden');
+                
+                feedbackTitle.textContent = 'Sila Cuba Lagi';
+                feedbackTitle.className = 'text-2xl md:text-3xl font-bold mb-3 text-rose-400';
+                
+                // Mainkan suara "Sila cuba lagi"
+                audioWrong.currentTime = 0;
+                audioWrong.play().catch(e => console.log("Terhalang oleh pelayar:", e));
+            }
+            
+            feedbackText.textContent = questionData.explanation;
+            feedbackArabic.innerHTML = questionData.highlighted_waqaf || questionData.waqaf_text; // Use highlighted text if available
+            
+            btnNextQuestion.classList.remove('hidden');
+            if (currentQuestionIndex >= gameData.length - 1) {
+                btnNextQuestion.innerHTML = '<i class="fas fa-flag-checkered"></i>';
+                btnNextQuestion.title = 'Lihat Keputusan';
+            } else {
+                btnNextQuestion.innerHTML = '<i class="fas fa-arrow-right"></i>';
+                btnNextQuestion.title = 'Seterusnya';
+            }
+        }
+
+        function hideFeedback() {
+            feedbackOverlay.classList.add('opacity-0');
+            feedbackOverlay.classList.add('pointer-events-none');
+            feedbackCard.classList.remove('scale-100');
+            feedbackCard.classList.add('scale-95');
+            isAnswerChecking = false;
+            setTimeout(() => {
+                feedbackOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        btnToggleCamera.addEventListener('click', toggleCamera);
+
+        async function toggleCamera() {
+            if (cameraEnabled) {
+                // Tutup Kamera
+                if(camera) {
+                    await camera.stop();
+                    camera = null;
+                }
+                cameraEnabled = false;
+                cameraContainer.classList.add('hidden');
+                btnToggleCamera.innerHTML = '<i class="fas fa-video"></i> Buka Kamera (Gestur)';
+                btnToggleCamera.classList.replace('bg-rose-600', 'bg-indigo-600');
+                btnToggleCamera.classList.replace('hover:bg-rose-500', 'hover:bg-indigo-500');
+            } else {
+                // Buka Kamera
+                try {
+                    btnToggleCamera.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memuatkan AI...';
+                    cameraContainer.classList.remove('hidden');
+                    await initMediaPipe();
+                    cameraEnabled = true;
+                    btnToggleCamera.innerHTML = '<i class="fas fa-video-slash"></i> Tutup Kamera';
+                    btnToggleCamera.classList.replace('bg-indigo-600', 'bg-rose-600');
+                    btnToggleCamera.classList.replace('hover:bg-indigo-500', 'hover:bg-rose-500');
+                } catch (error) {
+                    console.error("Ralat membuka kamera:", error);
+                    alert("Gagal membuka kamera. Sila pastikan pelayar anda membenarkan akses kamera.");
+                    cameraContainer.classList.add('hidden');
+                    btnToggleCamera.innerHTML = '<i class="fas fa-video"></i> Buka Kamera (Gestur)';
+                }
+            }
+        }
+
+        async function initMediaPipe() {
+            if (handsModel) {
+                camera.start();
+                return;
+            }
+
+            handsModel = new Hands({locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }});
+
+            handsModel.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.7,
+                minTrackingConfidence: 0.7
+            });
+
+            handsModel.onResults(onCameraResults);
+
+            camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await handsModel.send({image: videoElement});
+                },
+                width: 320,
+                height: 240
+            });
+            
+            await camera.start();
+        }
+
+        function onCameraResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            // Jaga jangan detect kalau tengah paparan maklum balas
+            if (isAnswerChecking) {
+                gestureIndicator.classList.add('hidden');
+                canvasCtx.restore();
+                return;
+            }
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                
+                // Draw skeleton (optional, nice for feedback)
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#14b8a6', lineWidth: 2});
+                drawLandmarks(canvasCtx, landmarks, {color: '#fcd34d', lineWidth: 1, radius: 2});
+
+                // Count fingers
+                const count = countFingers(landmarks);
+                
+                // 0 = Penumbuk (Ya), 4 = Buka Tangan (Tidak)
+                if (count === 0 || count === 4) {
+                    gestureIndicator.classList.remove('hidden');
+                    
+                    if (count === detectedGesture) {
+                        gestureHoldFrames++;
+                        const labelGestur = count === 0 ? "Penumbuk" : "Buka Tangan";
+                        gestureText.textContent = `${labelGestur}: ${gestureHoldFrames}/${REQUIRED_HOLD_FRAMES}`;
+                        
+                        // Cukup masa ditahan (debounce)
+                        if (gestureHoldFrames >= REQUIRED_HOLD_FRAMES) {
+                            gestureIndicator.classList.add('hidden');
+                            
+                            // 0 Jari (Penumbuk) = Ada Mad Iwad (Yes). 4 Jari (Buka Tangan) = Tiada Mad Iwad (No).
+                            const isYes = count === 0;
+                            const targetZone = isYes ? document.getElementById('drop-yes') : document.getElementById('drop-no');
+                            triggerAnswer(isYes, targetZone);
+                            
+                            gestureHoldFrames = 0;
+                            detectedGesture = -1;
+                        }
+                    } else {
+                        detectedGesture = count;
+                        gestureHoldFrames = 0;
+                    }
+                } else {
+                    gestureIndicator.classList.add('hidden');
+                    gestureHoldFrames = 0;
+                    detectedGesture = -1;
+                }
+            } else {
+                gestureIndicator.classList.add('hidden');
+                gestureHoldFrames = 0;
+                detectedGesture = -1;
+            }
+            canvasCtx.restore();
+        }
+
+        // Fungsi mengira jari berdasarkan titik (landmarks)
+        function countFingers(landmarks) {
+            let fingersUp = 0;
+            
+            // Jari diangkat jika Tip Y lebih kecil dari PIP Y (Y=0 berada di atas skrin)
+            // Hanya periksa 4 jari utama untuk membezakan penumbuk vs tangan terbuka dengan lebih tepat
+            const isIndexUp = landmarks[8].y < landmarks[6].y;
+            const isMiddleUp = landmarks[12].y < landmarks[10].y;
+            const isRingUp = landmarks[16].y < landmarks[14].y;
+            const isPinkyUp = landmarks[20].y < landmarks[18].y;
+            
+            if (isIndexUp) fingersUp++;
+            if (isMiddleUp) fingersUp++;
+            if (isRingUp) fingersUp++;
+            if (isPinkyUp) fingersUp++;
+            
+            return fingersUp; // Mengembalikan 0 (Penumbuk) atau 4 (Buka Tangan)
+        }
+
+        function resetButtons() {
+            answerBtns.forEach(btn => {
+                btn.disabled = false;
+                btn.className = 'answer-btn btn-option py-4 px-6 rounded-xl text-xl font-semibold flex items-center justify-center gap-3 transition-all duration-200';
+            });
+        }
+
+        function updateScore() {
+            scoreDisplay.textContent = score;
+        }
+
+        btnNextQuestion.addEventListener('click', () => {
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < gameData.length) {
+                loadQuestion();
+            } else {
+                endGame();
+            }
+        });
+
+        function endGame() {
+            gameActiveScreen.classList.add('hidden');
+            gameActiveScreen.classList.remove('flex');
+            gameOverScreen.classList.remove('hidden');
+            
+            // Matikan kamera bila habis game
+            if(cameraEnabled) toggleCamera();
+            
+            finalScore.textContent = score;
+            
+            // Optional: Play a sound effect based on score
+            // Here we just use a visual cue
+            const trophy = gameOverScreen.querySelector('.fa-trophy');
+            if(score === gameData.length) {
+                trophy.classList.add('text-yellow-400', 'animate-bounce');
+                trophy.classList.remove('text-slate-400', 'text-amber-600');
+            } else if (score >= gameData.length / 2) {
+                trophy.classList.add('text-amber-600');
+                trophy.classList.remove('text-yellow-400', 'text-slate-400', 'animate-bounce');
+            } else {
+                trophy.classList.add('text-slate-400');
+                trophy.classList.remove('text-yellow-400', 'text-amber-600', 'animate-bounce');
+            }
+        }
+
+        // Run init on load
+        window.addEventListener('load', init);
+
+    </script>
+</body>
+</html>
